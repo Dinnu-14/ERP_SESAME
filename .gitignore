@@ -1,0 +1,22 @@
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Local deployment settings
+.vercel/
+
+# Logs
+*.log

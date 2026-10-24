@@ -1,4 +1,6 @@
-const API_BASE = '/api/v1';
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)
+  ? `${(import.meta.env.VITE_API_URL as string).replace(/\/+$/, '')}/api/v1`
+  : '/api/v1';
 
 export function getAuthToken(): string | null {
   return localStorage.getItem('sesame_erp_token');
@@ -26,14 +28,32 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   });
 
   if (!response.ok) {
-    let errorDetail = 'An error occurred';
+    let errorDetail = `Request failed with status ${response.status}`;
     try {
-      const errorData = await response.json();
-      errorDetail = errorData.detail || JSON.stringify(errorData);
+      // Clone response before reading to prevent 'body stream already read' error
+      const responseClone = response.clone();
+      try {
+        const errorData = await responseClone.json();
+        if (errorData && typeof errorData === 'object') {
+          errorDetail = errorData.detail || JSON.stringify(errorData);
+        } else if (typeof errorData === 'string') {
+          errorDetail = errorData;
+        }
+      } catch {
+        // If JSON parsing fails (e.g., HTML error page or raw text), read the unconsumed original stream as text
+        const textData = await response.text();
+        if (textData && textData.trim()) {
+          errorDetail = textData;
+        }
+      }
     } catch {
-      errorDetail = await response.text();
+      errorDetail = `Request failed with status ${response.status} (${response.statusText || 'Error'})`;
     }
     throw new Error(errorDetail);
+  }
+
+  if (response.status === 204) {
+    return {} as T;
   }
 
   return response.json();

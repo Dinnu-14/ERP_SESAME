@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base
@@ -40,12 +41,37 @@ app.add_middleware(
 )
 
 # Health & Root Check
-@app.get("/health")
+@app.get("/", tags=["System"])
+def root(request: Request):
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return RedirectResponse(url="/docs")
+    return {
+        "status": "healthy",
+        "app": settings.PROJECT_NAME,
+        "version": "1.0.0",
+        "docs_url": "/docs",
+        "health_url": "/health",
+        "api_v1": settings.API_V1_STR
+    }
+
+@app.get("/health", tags=["System"])
 def health_check():
     return {
         "status": "healthy",
         "app": settings.PROJECT_NAME,
         "version": "1.0.0"
+    }
+
+@app.get("/api", include_in_schema=False)
+@app.get(settings.API_V1_STR, include_in_schema=False)
+def api_root():
+    return {
+        "app": settings.PROJECT_NAME,
+        "api_version": "v1",
+        "status": "online",
+        "docs": "/docs",
+        "health": "/health"
     }
 
 # Include API v1 routers

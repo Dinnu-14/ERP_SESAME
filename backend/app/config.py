@@ -11,7 +11,10 @@ class Settings(BaseSettings):
     
     # SQLite default allows running immediately without external dependencies; 
     # PostgreSQL can be supplied via DATABASE_URL in .env
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./erp.db")
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL",
+        "sqlite:////tmp/erp.db" if os.getenv("VERCEL") else "sqlite:///./erp.db"
+    )
     
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",

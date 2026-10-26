@@ -20,8 +20,15 @@ from app.api.sops import router as sops_router
 from app.api.reports import router as reports_router
 from app.api.audit import router as audit_router
 
-# Create database tables
+# Create database tables and auto-seed if fresh
 Base.metadata.create_all(bind=engine)
+try:
+    from app.seeds.seed_data import seed_database
+    seed_database()
+except Exception as e:
+    import logging
+    logging.getLogger("uvicorn").warning(f"Database auto-seed check skipped or failed: {e}")
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
